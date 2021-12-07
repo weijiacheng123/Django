@@ -38,7 +38,9 @@ def new_topic(request):
         form = TopicForm(data=request.POST)
 
         if form.is_valid():
-            form.save()
+            new_topic = form.save(commit=False)
+            new_topic.owner = request.user
+            new_topic.save()
 
             return redirect('MainApp:topics')
 
@@ -69,6 +71,9 @@ def edit_entry(request, entry_id):
     entry = Entry.objects.get(id=entry_id)
     topic = entry.topic
 
+    if topic.owner != request.user:
+        raise Http404
+
     if request.method != 'POST':
         # this argument teills Django to create the form prefilled
         # with information from the exiting entry object.
@@ -78,7 +83,7 @@ def edit_entry(request, entry_id):
         form = EntryForm(instance=entry, data=request.POST)
         if form.is_valid():
             form.save()
-            return redirect('Mainapp:topic', topic_id=topic.id)
+            return redirect('MainApp:topic', topic_id=topic.id)
 
     context = {'entry':entry, 'topic':topic, 'form':form}
     return render(request, 'MainApp/edit_entry.html', context)
